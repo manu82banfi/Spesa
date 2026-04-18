@@ -23,29 +23,48 @@ window.onload = async () => {
 
 async function loadFromCloud() {
     try {
-        const r = await fetch(URL, {
-            headers: { "X-Master-Key": API_KEY }
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+            headers: {
+                "X-Master-Key": API_KEY
+            }
         });
 
-        products = await r.json() || {};
-        localStorage.setItem("backup", JSON.stringify(products));
-    } catch {
-        products = JSON.parse(localStorage.getItem("backup") || "{}");
+        const data = await res.json();
+
+        // JSONBin ritorna: { record: {...} }
+        products = data.record || data || {};
+
+        localStorage.setItem("backup_products", JSON.stringify(products));
+
+        console.log("✔ Cloud caricato");
+
+    } catch (err) {
+        console.log("⚠ Offline → uso backup");
+
+        const backup = localStorage.getItem("backup_products");
+        products = backup ? JSON.parse(backup) : {};
     }
 }
 
 async function saveToCloud() {
-    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            "X-Master-Key": API_KEY
-        },
-        body: JSON.stringify(products)
-    });
+    try {
+        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Master-Key": API_KEY
+            },
+            body: JSON.stringify(products)
+        });
 
-    localStorage.setItem("backup", JSON.stringify(products));
-    alert("Salvato ✔");
+        localStorage.setItem("backup_products", JSON.stringify(products));
+
+        alert("✔ Salvato su cloud");
+
+    } catch (e) {
+        localStorage.setItem("backup_products", JSON.stringify(products));
+        alert("⚠ Salvato solo in locale");
+    }
 }
 
 function addProduct() {
