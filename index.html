@@ -8,19 +8,12 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#9b9cc2">
 
-<!-- iOS support -->
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-
 <style>
-body {
-    background-color: #9b9cc2;
-    font-family: Arial;
-    padding: 20px;
-}
-table { width:100%; border-collapse: collapse;}
-th, td { border:1px solid black; padding:6px;}
-th { background:#eee; cursor:pointer;}
-td { background:#ebebeb;}
+body { background:#9b9cc2; font-family:Arial; padding:20px; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th,td { border:1px solid black; padding:6px; }
+th { background:#eee; }
+td { background:#ebebeb; }
 </style>
 </head>
 
@@ -30,8 +23,14 @@ td { background:#ebebeb;}
 
 <input id="productName" placeholder="Prodotto">
 <input id="productPrice" type="number" placeholder="Prezzo">
+
 <select id="storeName"></select>
+
 <button onclick="addProduct()">Aggiungi</button>
+
+<br><br>
+
+<input id="searchProduct" placeholder="Cerca...">
 
 <br><br>
 
@@ -45,13 +44,11 @@ td { background:#ebebeb;}
 <th>Prezzo</th>
 <th>Store</th>
 <th>Azioni</th>
+<th>Qty</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
-
-<script src="api.js"></script>
-<script src="app.js"></script>
 
 <script src="app.js"></script>
 
