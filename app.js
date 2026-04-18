@@ -1,54 +1,129 @@
-const BIN_ID = "69e3de2b36566621a8c98385";
-const API_KEY = "$2a$10$O9DeoNpqBSYwuBJUsebAdON/SGrC8KTJ/btm8DGG/LxCTplTcq7LO";
-
-const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
-
 let products = {};
+let isSaved = true;
 
-const stores = ["eurospin","esselunga","adamello","bennet","shopping"];
+const supermarkets = [
+  "eurospin",
+  "esselunga",
+  "adamello",
+  "shopping",
+  "bennet",
+  "MyProtein"
+];
 
+/* INIT */
 window.onload = async () => {
-    const sel = document.getElementById("storeName");
+    fillStores();
+    await loadFromCloud();
+    render();
+    setupSearch();
+};
 
-    stores.forEach(s => {
+/* DROPDOWN */
+function fillStores() {
+    const sel = document.getElementById("storeName");
+    supermarkets.forEach(s => {
         const o = document.createElement("option");
         o.value = s;
         o.textContent = s;
         sel.appendChild(o);
     });
+}
 
-    await loadFromCloud();
+/* ADD PRODUCT */
+function addProduct() {
+    const name = productName.value.trim();
+    const price = parseFloat(productPrice.value);
+    const store = storeName.value;
+
+    if (!name || isNaN(price)) return alert("Dati non validi");
+
+    if (!products[name]) {
+        products[name] = { prices: [], store, quantity: 0 };
+    }
+
+    products[name].prices.push(price);
+    products[name].store = store;
+
+    isSaved = false;
     render();
-};
 
+    productName.value = "";
+    productPrice.value = "";
+}
+
+/* DELETE */
+function deleteProduct(name) {
+    delete products[name];
+    isSaved = false;
+    render();
+}
+
+/* QUANTITY */
+function updateQty(name, val) {
+    products[name].quantity = parseInt(val) || 0;
+    isSaved = false;
+}
+
+/* CALCOLI */
+function avg(arr) {
+    return (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2);
+}
+function max(arr) {
+    return Math.max(...arr).toFixed(2);
+}
+function min(arr) {
+    return Math.min(...arr).toFixed(2);
+}
+
+/* RENDER TABLE */
+function render() {
+    const body = document.getElementById("tableBody");
+    body.innerHTML = "";
+
+    Object.keys(products).forEach(name => {
+        const p = products[name];
+        const prices = p.prices;
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${name}</td>
+            <td>${prices.at(-1)}</td>
+            <td>${p.store}</td>
+            <td>${avg(prices)}</td>
+            <td>${max(prices)}</td>
+            <td>${min(prices)}</td>
+            <td><button onclick="deleteProduct('${name}')">X</button></td>
+            <td>
+                <input type="number" value="${p.quantity || 0}"
+                onchange="updateQty('${name}', this.value)">
+            </td>
+        `;
+
+        body.appendChild(tr);
+    });
+}
+
+/* CLOUD LOAD */
 async function loadFromCloud() {
     try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            headers: {
-                "X-Master-Key": API_KEY
-            }
+        const res = await fetch(`${API_URL}/latest`, {
+            headers: { "X-Master-Key": API_KEY }
         });
 
         const data = await res.json();
+        products = data.record || {};
+        localStorage.setItem("backup", JSON.stringify(products));
 
-        // JSONBin ritorna: { record: {...} }
-        products = data.record || data || {};
-
-        localStorage.setItem("backup_products", JSON.stringify(products));
-
-        console.log("✔ Cloud caricato");
-
-    } catch (err) {
-        console.log("⚠ Offline → uso backup");
-
-        const backup = localStorage.getItem("backup_products");
-        products = backup ? JSON.parse(backup) : {};
+    } catch (e) {
+        products = JSON.parse(localStorage.getItem("backup")) || {};
     }
 }
 
+/* CLOUD SAVE */
 async function saveToCloud() {
     try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        await fetch(API_URL, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -57,66 +132,23 @@ async function saveToCloud() {
             body: JSON.stringify(products)
         });
 
-        localStorage.setItem("backup_products", JSON.stringify(products));
+        localStorage.setItem("backup", JSON.stringify(products));
+        isSaved = true;
+        alert("Salvato cloud");
 
-        alert("✔ Salvato su cloud");
-
-    } catch (e) {
-        localStorage.setItem("backup_products", JSON.stringify(products));
-        alert("⚠ Salvato solo in locale");
+    } catch {
+        alert("Salvato solo locale");
     }
 }
 
-function addProduct() {
-    const name = productName.value.trim();
-    const price = parseFloat(productPrice.value);
-    const store = storeName.value;
-
-    if (!name || !price) return;
-
-    if (!products[name]) {
-        products[name] = { prices:[price], store, quantity:0 };
-    } else {
-        products[name].prices.push(price);
-        products[name].store = store;
-    }
-
-    render();
-}
-
-function deleteProduct(n) {
-    delete products[n];
-    render();
-}
-
-function updateQty(n,v){
-    products[n].quantity = +v;
-}
-
-function render() {
-    const tb = document.querySelector("tbody");
-    tb.innerHTML = "";
-
-    Object.keys(products).forEach(n => {
-        const p = products[n];
-        const last = p.prices.at(-1);
-
-        tb.innerHTML += `
-        <tr>
-        <td>${n}</td>
-        <td>${last}</td>
-        <td>${p.store}</td>
-        <td><button onclick="deleteProduct('${n}')">X</button></td>
-        <td><input type="number" value="${p.quantity||0}" onchange="updateQty('${n}',this.value)"></td>
-        </tr>`;
+/* SEARCH */
+function setupSearch() {
+    searchProduct.addEventListener("input", e => {
+        const v = e.target.value.toLowerCase();
+        document.querySelectorAll("#tableBody tr").forEach(r => {
+            r.style.display =
+                r.children[0].textContent.toLowerCase().includes(v)
+                ? "" : "none";
+        });
     });
 }
-
-document.addEventListener("input", e => {
-    if (e.target.id !== "searchProduct") return;
-
-    const v = e.target.value.toLowerCase();
-    document.querySelectorAll("tbody tr").forEach(r => {
-        r.style.display = r.children[0].textContent.toLowerCase().includes(v) ? "" : "none";
-    });
-});

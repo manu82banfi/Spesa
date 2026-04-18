@@ -9,11 +9,34 @@
 <meta name="theme-color" content="#9b9cc2">
 
 <style>
-body { background:#9b9cc2; font-family:Arial; padding:20px; }
-table { width:100%; border-collapse:collapse; margin-top:20px; }
-th,td { border:1px solid black; padding:6px; }
-th { background:#eee; }
+body {
+    background:#9b9cc2;
+    font-family: Arial;
+    padding:20px;
+}
+
+table {
+    width:100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border:1px solid #000;
+    padding:6px;
+    text-align:left;
+}
+
+th {
+    background:#eee;
+    cursor:pointer;
+}
+
 td { background:#ebebeb; }
+
+input, select, button {
+    margin:5px;
+    padding:6px;
+}
 </style>
 </head>
 
@@ -30,26 +53,30 @@ td { background:#ebebeb; }
 
 <br><br>
 
-<input id="searchProduct" placeholder="Cerca...">
-
-<br><br>
-
 <button onclick="saveToCloud()">☁️ Salva Cloud</button>
 <button onclick="loadFromCloud()">⬇️ Carica Cloud</button>
 
-<table id="productTable">
+<br><br>
+
+<input id="searchProduct" placeholder="Cerca...">
+
+<table>
 <thead>
 <tr>
 <th>Prodotto</th>
-<th>Prezzo</th>
+<th>Ultimo</th>
 <th>Store</th>
+<th>Media</th>
+<th>Max</th>
+<th>Min</th>
 <th>Azioni</th>
-<th>Qty</th>
+<th>Qtà</th>
 </tr>
 </thead>
-<tbody></tbody>
+<tbody id="tableBody"></tbody>
 </table>
 
+<script src="api.js"></script>
 <script src="app.js"></script>
 
 <script>
